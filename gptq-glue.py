@@ -86,7 +86,7 @@ for bits in selected_bits:
     gptq_config = GPTQConfig(
         bits=bits,
         dataset=tokenized_examples,
-       # tokenizer=tokenizer
+        tokenizer=tokenizer
     )
 
     # 加载模型并进行量化
