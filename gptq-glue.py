@@ -81,12 +81,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 for bits in selected_bits:
     start_time = time.time()
     
-    quantized_model_name = f"Llama3-8B-GPTQ-{bits}bit-all_glue_tasks"
+    quantized_model_name = f"Llama3-8B-GPTQ-{bits}bit-all_glue_tasks-remove-tokenizer"
     
     gptq_config = GPTQConfig(
         bits=bits,
         dataset=tokenized_examples,
-        tokenizer=tokenizer
+       # tokenizer=tokenizer
     )
 
     # 加载模型并进行量化
