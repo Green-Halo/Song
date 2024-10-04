@@ -27,7 +27,7 @@ os.makedirs(datasets_dir, exist_ok=True)
 
 # 加载GLUE数据集
 glue_tasks = ["sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli"]
-
+#glue_tasks = ["sst2"]
 # 创建合并样本列表
 examples = []
 
@@ -97,12 +97,14 @@ for bits in selected_bits:
             low_cpu_mem_usage=True,
             quantization_config=gptq_config,
         )
-    
+    print("序列化问题")
+    model.config.quantization_config.dataset = None
     print("量化结束 保存模型")
-    model.save_quantized(os.path.join(save_dir, quantized_model_name), use_safetensors=True)
+    model.save_pretrained(os.path.join(save_dir, quantized_model_name))
+    print('保存模型完成') 
     print("保存tokenizer")
     tokenizer.save_pretrained(os.path.join(save_dir, quantized_model_name))
-
+    print('保存tokenizer完成')
     time_taken = time.time() - start_time
     print(f"{bits}-bit quantization: {time_taken:.2f} seconds.")
     
