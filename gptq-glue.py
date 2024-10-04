@@ -12,7 +12,7 @@ tokenizer = AutoTokenizer.from_pretrained(base_model_name, use_fast=True, trust_
 tokenizer.pad_token = tokenizer.eos_token
 
 # 定义量化位数
-selected_bits = [4]
+selected_bits = [8]
 
 download_config = DownloadConfig()
 download_config.num_proc = 8  # 根据您的网络情况调整
@@ -65,7 +65,7 @@ for i in range(max_length):
                 examples.append(example["sentence"])
 
 batch_size = 4096 # 设定批处理大小为
-tokenized_length = 256
+tokenized_length = 64
 
 # 对合并的数据进行Tokenization
 tokenized_examples = [
@@ -81,7 +81,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 for bits in selected_bits:
     start_time = time.time()
     
-    quantized_model_name = f"Llama3-8B-GPTQ-{bits}bit-all_glue_tasks-remove-tokenizer"
+    quantized_model_name = f"Llama3-8B-GPTQ-{bits}bit-all_glue_tasks"
     
     gptq_config = GPTQConfig(
         bits=bits,
