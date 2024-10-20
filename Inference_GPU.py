@@ -8,7 +8,7 @@ llama_cpp_executable = "/home/syd/Code/Llama/llama.cpp.gpu/llama.cpp/llama-cli"
 model_path = "/home/syd/Code/Llama/llama.cpp/models/Quantized_models/Llama-3.1-8B-Instruct_llamacpp_Q4_K_M.gguf"
 
 # 设置 GPU 层数
-n_gpu_layers = 10  # 你可以根据你的 GPU 选择合适的层数
+n_gpu_layers = 20  # 你可以根据你的 GPU 选择合适的层数
 
 # 调用 llama.cpp 的推理函数，支持 GPU
 def run_llama_cpp(prompt, retry_limit=3):
@@ -17,7 +17,7 @@ def run_llama_cpp(prompt, retry_limit=3):
             # 添加 --n-gpu-layers 选项以启用 GPU 推理
             print(f"Attempt {attempt + 1}: Running llama.cpp with prompt: {prompt[:50]}...")  # 打印部分提示
             result = subprocess.run([llama_cpp_executable, '-m', model_path, '--prompt', prompt, '--n-gpu-layers', str(n_gpu_layers)],
-                                    capture_output=True, text=True, timeout=60)
+                                    capture_output=True, text=True, timeout=300)
             if result.stdout.strip():
                 print(f"Output: {result.stdout.strip()[:100]}...")  # 打印部分输出用于检查
                 return result.stdout
