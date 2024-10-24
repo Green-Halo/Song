@@ -13,7 +13,7 @@ for task in glue_tasks:
 prompt_dic={
     "sst2":"""
     Prompt:
-    determine the sentiment of the sentence. The options are:
+    determine the sentiment of following sentences. The options are:
     0 if the sentence is negative
     1 if the sentence is positive 
     No analyses or explanations.Only respond with 0 or 1.
@@ -83,7 +83,7 @@ for key in glue_tasks:
     
 model_name = "Llama-3.1-8B-Instruct_llamacpp_Q4_K_M.gguf"
 model_path = f"/home/syd/Code/Llama/llama.cpp/models/Quantized_models/Llama-3.1-8B-Instruct-llamacpp/{model_name}"
-llama_path = "/home/syd/Code/Llama/llama.cpp.gpu/llama.cpp/llama-cli"
+llama_cli_path = "/home/syd/Code/Llama/llama.cpp.gpu/llama.cpp/llama-cli"
 
 infer_num = 5
 # prompt = prompt_dic["sst2"]+'\n'
@@ -92,42 +92,32 @@ infer_num = 5
 prompt = prompt_dic["sst2"]
 
 
+dataset = ["I love you","I hate you","I like you","I dislike you","I am happy","I am sad","I am angry","I am excited","I am depressed","I am anxious"]
 
-# 启动子进程，打开输入输出管道
 process = subprocess.Popen(
-    [llama_path, '-m', model_path, '-i'],  # 替换为你自己的可执行文件路径和参数
-    stdin=subprocess.PIPE,  # 打开输入管道
-    stdout=subprocess.PIPE,  # 打开输出管道
-    text=True,  # 处理为文本模式，而不是字节
-    bufsize=1,  # 行缓冲，实时处理输出
+    [llama_cli_path, '-m', model_path, '-i'], 
+    stdin=subprocess.PIPE,  
+    stdout=subprocess.PIPE,  
+    text=True,  
+    bufsize=1,  
 )
-
-# 与模型进行多轮交互
 try:
-    while True:
-        # 获取用户输入
-        user_input = input()
-
-
-        # 发送输入到模型
-        process.stdin.write(user_input+'\n')
-        process.stdin.flush()
-
-        # 逐行读取模型的输出，直到遇到新的提示符或其他结束标记
-        while True:
-            line = process.stdout.readline()
-            if not line:
-                break
-            print("Model:", line.strip())
-
-            
-
-except KeyboardInterrupt:
-    # 捕获 Ctrl+C，退出交互
-    print("\nExiting...")
+    with open("model_output.txt", "w") as output_file:
+        for sentence in dataset:
+            process.stdin.write(sentence+'\n')
+            process.stdin.flush()
+            response_lines = []
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                if "<EOS>" in line:
+                    break
+                response_lines.append(line.strip())
+                output_file.write("\n".join(sentence)+ "\n")
+                output_file.write("\n".join(response_lines)+ "\n")  
 
 finally:
-    # 关闭进程
     process.stdin.close()
     process.terminate()
     process.wait()
