@@ -1,6 +1,6 @@
 from datasets import load_dataset
 import subprocess
-
+import time
 #glue_tasks = ["sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli"]
 glue_tasks = ["sst2"]
 datasets = {}
@@ -11,7 +11,13 @@ for task in glue_tasks:
     
 
 prompt_dic={
-    "sst2":"""In the following conversations, predict the sentiment of the given sentence and output 0 if it is negative and 1 if it is positive. No analyses or explanations.Only respond with 0 or 1."""
+    "sst2":"""
+    Prompt:
+    determine the sentiment of the sentence. The options are:
+    0 if the sentence is negative
+    1 if the sentence is positive 
+    No analyses or explanations.Only respond with 0 or 1.
+    """
 }
 for key in glue_tasks:
     if key == "mrpc":
@@ -86,13 +92,43 @@ infer_num = 5
 prompt = prompt_dic["sst2"]
 
 
-with open(f"{model_name}_output.txt", "w") as f:
-    process = subprocess.run(
-        [llama_path, '-m', model_path, '-p', prompt,'-cnv'],
-    )
-    
-    for i in range(infer_num):
-        process.stdin.write(datasets["sst2"][i]["sentence"]+'\n')
+
+# 启动子进程，打开输入输出管道
+process = subprocess.Popen(
+    [llama_path, '-m', model_path, '-i'],  # 替换为你自己的可执行文件路径和参数
+    stdin=subprocess.PIPE,  # 打开输入管道
+    stdout=subprocess.PIPE,  # 打开输出管道
+    text=True,  # 处理为文本模式，而不是字节
+    bufsize=1,  # 行缓冲，实时处理输出
+)
+
+# 与模型进行多轮交互
+try:
+    while True:
+        # 获取用户输入
+        user_input = input()
+
+
+        # 发送输入到模型
+        process.stdin.write(user_input+'\n')
         process.stdin.flush()
-        output = process.stdout.readline()
-        f.write(output)
+
+        # 逐行读取模型的输出，直到遇到新的提示符或其他结束标记
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            print("Model:", line.strip())
+
+            
+
+except KeyboardInterrupt:
+    # 捕获 Ctrl+C，退出交互
+    print("\nExiting...")
+
+finally:
+    # 关闭进程
+    process.stdin.close()
+    process.terminate()
+    process.wait()
+    print("Process terminated.")

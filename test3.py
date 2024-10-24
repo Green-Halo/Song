@@ -14,7 +14,7 @@ for task in glue_tasks:
 
 
 prompt_dic={
-    "sst2":"""In the following conversations, predict the sentiment of the given sentence and output 0  
+    "sst2":"""In the following conversations, predict the sentiment of the given sentences and output 0  
     if it is negative and 1 if it is positive. No analyses or explanations.Only respond with 0 or 1."""
 }
 for key in glue_tasks:
@@ -92,3 +92,4 @@ with open(f"{model_name}.txt","w") as f:
         text=True,
         bufsize=0
     )
+    
