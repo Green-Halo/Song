@@ -1,72 +1,26 @@
 import subprocess
-import select
-import time
-from datasets import load_dataset
 
-# 定义最大等待时间
-TIMEOUT = 10  # 单位秒
+# 定义命令和参数
+command = [
+    "/home/syd/Code/Llama/llama.cpp.gpu/llama.cpp/llama-cli",
+    "-m", "/home/syd/Code/Llama/llama.cpp/models/Quantized_models/Llama-3.1-8B-Instruct_llamacpp_Q4_K_M.gguf",
+    "-cnv"
+]
 
-glue_tasks = ["sst2"]
-datasets = {}
+# 打开输出文件
+with open("output.txt", "w") as output_file:
+    # 使用 subprocess.Popen 运行命令，并捕获标准输出和标准错误
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
-# 加载 GLUE 任务数据集
-for task in glue_tasks:
-    datasets[task] = load_dataset("glue", task, split="train")
-
-prompt_dic = {
-    "sst2": """In the following conversations, predict the sentiment of the given sentence and output 0 if it is negative and 1 if it is positive. No analyses or explanations. Only respond with 0, 1."""
-}
-
-model_name = "Llama-3.1-8B-Instruct_llamacpp_Q4_K_M.gguf"
-model_path = f"/home/syd/Code/Llama/llama.cpp/models/Quantized_models/Llama-3.1-8B-Instruct-llamacpp/{model_name}"
-llama_path = "/home/syd/Code/Llama/llama.cpp.gpu/llama.cpp/llama-cli"
-
-with open(f"{model_name}.txt", "w") as f:
-    print("Running Llama model...")
-    process = subprocess.Popen(
-        [llama_path, '-m', model_path, '-cnv'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1  # 设置为行缓冲
-    )
-    
-    print("send prompt")
-    process.stdin.write(prompt_dic["sst2"] + '\n')
-    process.stdin.flush()
-    print("prompt has been sent")
-    
-    start_time = time.time()
-    
-    # 循环读取输出，但设置超时时间
+    # 逐行读取输出并写入文件
     while True:
-        ready, _, _ = select.select([process.stdout], [], [], 1)  # 超时1秒检查一次
-        if ready:
-            output = process.stdout.readline().strip()
-            print(f"Ignored output: {output}")
-        if time.time() - start_time > TIMEOUT:
-            print("Timeout reached, proceeding to input sentences.")
+        line = process.stdout.readline()
+        if not line:
             break
-    
-    # 发送句子并获取响应
-    for i in range(3):
-        sentence = datasets["sst2"][i]["sentence"]
-        process.stdin.write(sentence + '\n')
-        process.stdin.flush()
-        print(f"Sentence '{sentence}' sent")
-        
-        # 逐行读取子进程的输出
-        output = process.stdout.readline().strip()
-        print(f"Received output: {output}")
-        
-        f.write(sentence + ' ' + output + '\n')
-    
-    process.stdin.close()  # 关闭输入
-    
-    # 在最后读取并处理子进程的错误输出
-    error = process.stderr.read().strip()
-    if error:
-        print(f"Error for input {error}")
-    
-    process.wait()  # 等待子进程完全完成
+        output_file.write(line)
+        print(line, end='')  # 同时在终端打印输出（可选）
+
+# 等待进程结束
+process.wait()
+
+print("命令输出已保存到 output.txt 文件中。")

@@ -1,6 +1,7 @@
 from datasets import load_dataset
 import subprocess
 
+#glue_tasks = ["sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli"]
 glue_tasks = ["sst2"]
 datasets = {}
 
@@ -8,17 +9,16 @@ datasets = {}
 for task in glue_tasks:
     datasets[task] = load_dataset("glue", task,split="train")
     
-    
 
 prompt_dic={
-    "sst2":"""In the following conversations, predict the sentiment of the given sentence and output 0 if it is negative and 1 if it is positive. No analyses or explanations.Only respond with 0, 1."""
+    "sst2":"""In the following conversations, predict the sentiment of the given sentence and output 0 if it is negative and 1 if it is positive. No analyses or explanations.Only respond with 0 or 1."""
 }
 for key in glue_tasks:
     if key == "mrpc":
         prompt_dic[key] = """
         Prompt:
         In the following conversations, determine whether the two sentences given are equivalent, 
-        and return 1 if they are, or 0 if they are not. No analyses or explanations.Only respond with 0, 1, or 2.
+        and return 1 if they are, or 0 if they are not. No analyses or explanations.Only respond with 0 or 1.
         """
         
     elif key == "qqp":
@@ -75,40 +75,24 @@ for key in glue_tasks:
         No analyses or explanations.Only respond with 0 or 1.
         """
     
-
-
-
 model_name = "Llama-3.1-8B-Instruct_llamacpp_Q4_K_M.gguf"
 model_path = f"/home/syd/Code/Llama/llama.cpp/models/Quantized_models/Llama-3.1-8B-Instruct-llamacpp/{model_name}"
 llama_path = "/home/syd/Code/Llama/llama.cpp.gpu/llama.cpp/llama-cli"
 
-with open(f"{model_name}.txt","w") as f:
-    print("Running Llama model...")
-    process = subprocess.Popen(
-        [llama_path,'-m',model_path,'-cnv'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=0
+infer_num = 5
+# prompt = prompt_dic["sst2"]+'\n'
+# for i in range(infer_num):
+#     prompt += datasets["sst2"][i]["sentence"]+'\n'
+prompt = prompt_dic["sst2"]
+
+
+with open(f"{model_name}_output.txt", "w") as f:
+    process = subprocess.run(
+        [llama_path, '-m', model_path, '-p', prompt,'-cnv'],
     )
     
-    print("send prompt")
-    process.stdin.write(prompt_dic["sst2"] + '\n')
-    process.stdin.flush()  # 确保输入被立即发送到模型
-    print("prompt has been sent")
-    #output = process.stdout.readline().strip() # 读取一行输出并去除首尾空白
-    
-    for i in range(3):
-        
-        
-        stdout, stderr = process.communicate(datasets["sst2"][i]["sentence"])
-        print("sentences have been sent")
-        output = stdout.strip()
-        print("get output")
-        
-        f.write(datasets["sst2"][i]["sentence"]+' '+output+'\n')
-    
-    error = process.stderr.readline().strip()
-    if error:
-        print(f"Error for input {error}")
+    for i in range(infer_num):
+        process.stdin.write(datasets["sst2"][i]["sentence"]+'\n')
+        process.stdin.flush()
+        output = process.stdout.readline()
+        f.write(output)
